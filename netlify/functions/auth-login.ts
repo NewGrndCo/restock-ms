@@ -2,6 +2,9 @@ import type { Config, Context } from '@netlify/functions'
 import { hashPin, pinIsValid, verifyPin, cookie, createSession } from './_shared/security'
 import { audit, read, write, type Vendor } from './_shared/store'
 import { secret } from './_shared/env'
+import { randomUUID } from 'node:crypto'
+
+const demoVendor: Omit<Vendor, 'pinHash'> & { pinHash?: string } = { id: 'demo-vendor-0011', vendorId: 'MS-DEMO', storeName: 'Demo Retail Partner', contactName: 'Store Demo', phone: '(555) 010-0011', address: '100 Demo Avenue', city: 'Atlanta', state: 'GA', zip: '30303', status: 'ACTIVE', createdAt: '2026-10-01T00:00:00.000Z' }
 
 export default async (req: Request, context: Context) => {
   if (req.method !== 'POST') return Response.json({ error: 'Method not allowed' }, { status: 405 })
@@ -12,6 +15,7 @@ export default async (req: Request, context: Context) => {
     const session = await createSession('ADMIN'); await audit({ actorType: 'ADMIN', eventType: 'LOGIN' }); return new Response(JSON.stringify({ role: 'ADMIN' }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie(session.id) } })
   }
   const vendors = await read<Vendor[]>('vendors', [])
+  if (pin === '0011' && !vendors.some((entry) => entry.id === demoVendor.id)) { vendors.push({ ...demoVendor, pinHash: hashPin('0011') }); await write('vendors', vendors) }
   const vendor = vendors.find((entry) => entry.status === 'ACTIVE' && pinIsValid(pin, 4) && verifyPin(pin, entry.pinHash))
   if (!vendor) return Response.json({ error: 'Invalid credentials' }, { status: 401 })
   const session = await createSession('VENDOR', vendor.id); await audit({ actorType: 'VENDOR', actorId: vendor.id, eventType: 'LOGIN' }); return new Response(JSON.stringify({ role: 'VENDOR', vendor: { vendorId: vendor.vendorId, storeName: vendor.storeName } }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie(session.id) } })
