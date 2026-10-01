@@ -3,7 +3,7 @@ import type { Context } from '@netlify/functions'
 import { secret } from './env'
 import { read, write, type Role } from './store'
 
-type Session = { id: string; role: Role; vendorId?: string; expiresAt: number }
+export type Session = { id: string; role: Role; vendorId?: string; expiresAt: number }
 const sessionSecret = () => secret('RESTOCK_SESSION_SECRET')
 
 export function hashPin(pin: string) { const salt = randomBytes(16).toString('hex'); return `${salt}:${scryptSync(pin, salt, 32).toString('hex')}` }
