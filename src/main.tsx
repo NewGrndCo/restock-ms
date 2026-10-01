@@ -2,33 +2,41 @@ import { FormEvent, StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
-function App() {
+type Product = { name: string; color: string; delivered: number; remaining: number; order: number }
+const products: Product[] = [
+  { name: 'Strawberry Lemonade', color: '#d8342a', delivered: 8, remaining: 0, order: 12 },
+  { name: 'Classic Lemonade', color: '#f1c318', delivered: 8, remaining: 2, order: 8 },
+  { name: 'Half & Half', color: '#ee781e', delivered: 8, remaining: 5, order: 4 },
+]
+
+function ProductBottle({ color }: { color: string }) { return <span className="bottle" style={{ '--bottle': color } as React.CSSProperties} aria-hidden="true" /> }
+
+function Gate({ onPreview }: { onPreview: (view: 'vendor' | 'admin') => void }) {
   const [pin, setPin] = useState('')
-  const [message, setMessage] = useState('')
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setMessage(pin.trim() ? 'Secure vendor access is not connected yet. No PIN was sent or stored.' : 'Enter your vendor PIN to continue.')
-  }
-
-  return (
-    <main className="gate-shell">
-      <section className="gate-card" aria-labelledby="page-title">
-        <div className="brand-mark" aria-hidden="true">MS</div>
-        <p className="eyebrow">Monsta Squeeze</p>
-        <h1 id="page-title">Retail restock</h1>
-        <p className="lede">Private access for authorized Monsta Squeeze retailers.</p>
-        <form className="pin-form" onSubmit={handleSubmit}>
-          <label htmlFor="vendor-pin">Vendor PIN</label>
-          <input id="vendor-pin" name="vendor-pin" inputMode="numeric" autoComplete="off" placeholder="Enter your PIN" value={pin} onChange={(event) => setPin(event.target.value)} aria-describedby="pin-status" />
-          <button type="submit">Access restock</button>
-        </form>
-        <p id="pin-status" className="setup-note" role="status">{message || 'Authorized retailers only. Your PIN identifies your vendor account.'}</p>
-      </section>
-    </main>
-  )
+  const [message, setMessage] = useState('Authorized retailers only. Your PIN identifies your vendor account.')
+  function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setMessage(pin.trim() ? 'Secure vendor access is not connected yet. No PIN was sent or stored.' : 'Enter your vendor PIN to continue.') }
+  return <main className="gate-shell"><section className="gate-card" aria-labelledby="page-title">
+    <div className="hero-art"><div className="monsta-burst">MS</div><span className="hero-slice slice-one" /><span className="hero-slice slice-two" /></div><p className="eyebrow">Monsta Squeeze</p><h1 id="page-title">Retail restock</h1><p className="lede">Private access for authorized Monsta Squeeze retailers.</p>
+    <form className="pin-form" onSubmit={submit}><label htmlFor="vendor-pin">Vendor PIN</label><input id="vendor-pin" inputMode="numeric" autoComplete="off" placeholder="Enter your PIN" value={pin} onChange={(event) => setPin(event.target.value)} /><button type="submit">Access restock</button></form><p className="setup-note" role="status">{message}</p>
+    {import.meta.env.DEV && <div className="preview-links"><span>Development preview</span><button type="button" onClick={() => onPreview('vendor')}>Vendor portal</button><button type="button" onClick={() => onPreview('admin')}>Admin CMS</button></div>}
+  </section></main>
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode><App /></StrictMode>,
-)
+function VendorPortal({ onLogout }: { onLogout: () => void }) {
+  const [quantities, setQuantities] = useState(products.map((product) => product.order)); const total = quantities.reduce((sum, quantity) => sum + quantity, 0)
+  const adjust = (index: number, amount: number) => setQuantities((current) => current.map((quantity, item) => item === index ? Math.max(0, quantity + amount) : quantity))
+  return <div className="portal"><header className="topbar"><div className="wordmark">MONSTA<br /><em>SQUEEZE</em></div><button className="text-button" onClick={onLogout}>Log out</button></header><main className="vendor-main">
+    <section className="welcome hero-panel"><p className="eyebrow">Welcome back,</p><h1>M&amp;B Deli</h1><p>MS-R003<br />123 Main St<br />Atlanta, GA 30303</p></section><section className="info-card"><div className="section-heading"><span>Last delivery</span><small>Nov 4, 2024</small></div><strong>24 bottles</strong><div className="mini-breakdown">8 Strawberry <i /> 8 Classic <i /> 8 Half &amp; Half</div></section><section className="info-card current-order"><div className="section-heading"><span>Current order</span><small>MS-ORD-0001</small></div><strong>No active order</strong><button className="primary-action" onClick={() => document.getElementById('restock-builder')?.scrollIntoView({ behavior: 'smooth' })}>▣ &nbsp; Restock Monsta</button></section>
+    <section className="workflow-card" id="sell-through"><div className="step-label">03 / Sell-through report</div><h2>Previous delivery report</h2><p className="muted">Let us know how your last delivery sold.</p>{products.map((product) => <div className="product-row" key={product.name}><ProductBottle color={product.color} /><div className="product-name"><strong>{product.name}</strong><small>Delivered &nbsp; {product.delivered}</small></div><div><small>Remaining</small><strong>{product.remaining}</strong></div><div className="sold"><small>Sold</small><strong>{product.delivered - product.remaining}</strong></div></div>)}<label>Best selling flavor<select defaultValue="Strawberry Lemonade"><option>Strawberry Lemonade</option><option>Classic Lemonade</option><option>Half &amp; Half</option></select></label><label>Slowest selling flavor<select defaultValue="Half &amp; Half"><option>Strawberry Lemonade</option><option>Classic Lemonade</option><option>Half &amp; Half</option></select></label><label>Customer feedback <textarea placeholder="Optional notes from customers" /></label><button className="primary-action">Continue</button></section>
+    <section className="workflow-card" id="restock-builder"><div className="step-label">04 / Build restock order</div><h2>Build your restock</h2><p className="muted">Select how many bottles you need.</p>{products.map((product, index) => <div className="quantity-row" key={product.name}><ProductBottle color={product.color} /><div><strong>{product.name}</strong><small>$4.00 each</small></div><button onClick={() => adjust(index, -1)} aria-label={`Decrease ${product.name}`}>−</button><b>{quantities[index]}</b><button onClick={() => adjust(index, 1)} aria-label={`Increase ${product.name}`}>+</button></div>)}<div className="totals"><span>Total bottles <b>{total}</b></span><span>Wholesale total <b>${(total * 4).toFixed(2)}</b></span></div><fieldset><legend>Payment method</legend><label><input type="radio" name="payment" defaultChecked /> Check</label><label><input type="radio" name="payment" /> Cash</label></fieldset><button className="primary-action" disabled={total < 24}>Submit restock</button></section>
+    <section className="history-card"><div className="section-heading"><h2>Order history</h2><span>View all</span></div>{['MS-ORD-0001', 'MS-ORD-0000', 'MS-ORD-0009'].map((order, index) => <div className="history-row" key={order}><div><strong>{order}</strong><small>{['Nov 10, 2024', 'Oct 27, 2024', 'Oct 14, 2024'][index]} &nbsp; 24 bottles</small></div><span className={index === 0 ? 'status submitted' : 'status delivered'}>{index === 0 ? 'Submitted' : 'Delivered'}</span><b>${index === 2 ? '120.00' : '96.00'}</b></div>)}</section>
+  </main></div>
+}
+
+function AdminPortal({ onLogout }: { onLogout: () => void }) {
+  return <div className="admin-layout"><aside className="admin-nav"><div className="wordmark">MONSTA<br /><em>SQUEEZE</em></div>{['Dashboard', 'Vendors', 'Orders', 'Production', 'Inventory', 'Route / Delivery', 'Payments', 'Analytics'].map((item, index) => <button className={index === 0 ? 'active' : ''} key={item}>{['▦', '♙', '▤', '◉', '▥', '⌁', '$', '◌'][index]} <span>{item}</span></button>)}<button onClick={onLogout}>↪ <span>Log out</span></button></aside><main className="admin-main"><header className="admin-header"><div><p className="eyebrow">Operations control</p><h1>Dashboard</h1><p className="muted">Overview of orders, production, inventory and deliveries.</p></div><button className="text-button" onClick={onLogout}>Admin &nbsp; Log out</button></header><div className="metric-grid">{[['♧', 'Active Vendors', '12'], ['▣', 'Open Orders', '8'], ['◉', 'Bottles Ordered', '312'], ['$', 'Wholesale Revenue', '$1,248']].map(([icon, label, value]) => <div className="metric-card" key={label}><span>{icon}</span><small>{label}</small><strong>{value}</strong></div>)}</div><div className="admin-grid"><section className="admin-card"><div className="section-heading"><h2>Orders by status</h2><span>Today</span></div>{[['Submitted', '2', 'red'], ['Approved', '4', 'yellow'], ['In Production', '1', 'blue'], ['Ready', '5', 'green'], ['Out for Delivery', '0', 'orange'], ['Delivered', '18', 'green']].map(([label, value, color]) => <div className="bar-row" key={label}><span className={`dot ${color}`} />{label}<b>{value}</b></div>)}</section><section className="admin-card"><div className="section-heading"><h2>Production requirements</h2><span>Approved orders</span></div>{[['Strawberry Lemonade', '104', 'red', '82%'], ['Classic Lemonade', '96', 'yellow', '72%'], ['Half & Half', '112', 'orange', '88%']].map(([label, value, color, width]) => <div className="requirement" key={label}><span>{label}<b>{value}</b></span><i className={color} style={{ width }} /></div>)}<strong className="total-line">Total <b>312</b></strong></section><section className="admin-card"><div className="section-heading"><h2>Inventory</h2><span>Finished</span></div>{[['Available', '156', 'yellow'], ['Allocated', '312', 'red'], ['Reserve', '48', 'orange'], ['Street inventory', '60', 'blue']].map(([label, value, color]) => <div className="inventory-row" key={label}><span className={`inventory-icon ${color}`}>◆</span>{label}<b>{value}</b></div>)}</section><section className="admin-card route-card"><div className="section-heading"><h2>Upcoming deliveries</h2><button className="small-button">View route →</button></div>{['M&B Deli', 'Quick Stop', 'City Mart'].map((store, index) => <div className="route-row" key={store}><span>{store}<small>MS-ORD-000{index + 1}</small></span><b>{index === 1 ? 30 : 24}</b><span>${index === 1 ? '120.00' : '96.00'}</span><em>Ready</em></div>)}</section></div></main></div>
+}
+
+function App() { const [view, setView] = useState<'gate' | 'vendor' | 'admin'>(new URLSearchParams(location.search).get('preview') as 'vendor' | 'admin' || 'gate'); const logout = () => { history.replaceState({}, '', location.pathname); setView('gate') }; return view === 'vendor' ? <VendorPortal onLogout={logout} /> : view === 'admin' ? <AdminPortal onLogout={logout} /> : <Gate onPreview={(next) => { history.replaceState({}, '', `?preview=${next}`); setView(next) }} /> }
+
+createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
