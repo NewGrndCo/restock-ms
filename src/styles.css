@@ -1,0 +1,17 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #fff7dc; background: #090909; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 50% -10%, #35220c 0%, #090909 45%); }
+button, input { font: inherit; }
+.gate-shell { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
+.gate-card { width: min(100%, 430px); border: 1px solid #58420e; border-radius: 28px; padding: 32px 24px 24px; background: linear-gradient(160deg, #17130b, #0d0d0d 62%); box-shadow: 0 24px 80px #000b; }
+.brand-mark { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 18px; background: #f5bd19; color: #0b0b0b; font-weight: 950; letter-spacing: -.08em; font-size: 1.25rem; }
+.eyebrow { margin: 30px 0 6px; color: #f5bd19; text-transform: uppercase; letter-spacing: .16em; font-size: .72rem; font-weight: 800; }
+h1 { margin: 0; font-size: clamp(2.4rem, 11vw, 4rem); line-height: .96; letter-spacing: -.07em; }
+.lede { margin: 18px 0 30px; color: #c6bda7; line-height: 1.5; }
+.pin-form { display: grid; gap: 10px; }
+label { color: #fff7dc; font-size: .9rem; font-weight: 700; }
+input { width: 100%; border: 1px solid #59481d; border-radius: 14px; padding: 15px 16px; color: #fff; background: #111; }
+input::placeholder { color: #7f7767; }
+button { width: 100%; border: 0; border-radius: 14px; padding: 16px; color: #171106; background: #f5bd19; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
+button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
+.setup-note { margin: 24px 0 0; color: #8e8676; font-size: .78rem; line-height: 1.5; }
