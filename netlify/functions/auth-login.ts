@@ -15,8 +15,15 @@ export default async (req: Request, context: Context) => {
   }
   const vendors = await read<Vendor[]>('vendors', [])
   if (pin === '0011' && !vendors.some((entry) => entry.id === demoVendor.id)) { vendors.push({ ...demoVendor, pinHash: hashPin('0011') }); await write('vendors', vendors) }
-  const vendor = pin === '0011' ? vendors.find((entry) => entry.id === demoVendor.id) : vendors.find((entry) => entry.status === 'ACTIVE' && pinIsValid(pin, 4) && verifyPin(pin, entry.pinHash))
+  let repairedLegacyPin = false
+  const vendor = pin === '0011' ? vendors.find((entry) => entry.id === demoVendor.id) : vendors.find((entry) => {
+    if (entry.status !== 'ACTIVE' || !pinIsValid(pin, 4)) return false
+    if (entry.pinHash && verifyPin(pin, entry.pinHash)) return true
+    if (entry.pin === pin) { entry.pinHash = hashPin(pin); repairedLegacyPin = true; return true }
+    return false
+  })
   if (!vendor) return Response.json({ error: 'Invalid credentials' }, { status: 401 })
+  if (repairedLegacyPin) await write('vendors', vendors)
   const session = await createSession('VENDOR', vendor.id); await audit({ actorType: 'VENDOR', actorId: vendor.id, eventType: 'LOGIN' }); return new Response(JSON.stringify({ role: 'VENDOR', vendor: { vendorId: vendor.vendorId, storeName: vendor.storeName } }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie(session.id) } })
 }
 export const config: Config = { path: '/api/auth/login' }
