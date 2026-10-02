@@ -4,7 +4,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { secret } from './env'
 
 export type Role = 'ADMIN' | 'VENDOR'
-export type Vendor = { id: string; vendorId: string; storeName: string; contactName: string; phone: string; address: string; city: string; state: string; zip: string; pinHash: string; imageKey?: string; status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED'; createdAt: string }
+export type Vendor = { id: string; vendorId: string; storeName: string; contactName: string; phone: string; address: string; city: string; state: string; zip: string; pinHash: string; pin?: string; imageKey?: string; status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED'; createdAt: string }
 export type Order = { id: string; orderNumber: string; vendorId: string; source: 'PORTAL' | 'PHONE'; status: string; items: Array<{ product: string; quantity: number }>; totalBottles: number; totalAmount: number; paymentMethod: 'CHECK' | 'CASH'; createdAt: string }
 export type CatalogProduct = { name: string; color: string; inventory: number; imageKey?: string }
 export type InventoryEntry = { id: string; productName: string; previousQuantity: number; quantity: number; delta: number; reason: string; actorType: Role | 'SYSTEM'; createdAt: string }
