@@ -8,7 +8,7 @@ const demoVendor: Omit<Vendor, 'pinHash'> & { pinHash?: string } = { id: 'demo-v
 export default async (req: Request, context: Context) => {
   if (req.method !== 'POST') return Response.json({ error: 'Method not allowed' }, { status: 405 })
   const body = await req.json().catch(() => ({})) as { pin?: string }
-  const pin = body.pin ?? ''
+  const pin = String(body.pin ?? '').trim()
   if (!/^\d{4,6}$/.test(pin)) return Response.json({ error: 'Invalid credentials' }, { status: 401 })
   if (pinIsValid(pin, 6) && secret('ADMIN_BOOTSTRAP_PIN') && pin === secret('ADMIN_BOOTSTRAP_PIN')) {
     const session = await createSession('ADMIN'); await audit({ actorType: 'ADMIN', eventType: 'LOGIN' }); return new Response(JSON.stringify({ role: 'ADMIN' }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie(session.id) } })
@@ -19,7 +19,7 @@ export default async (req: Request, context: Context) => {
   const vendor = pin === '0011' ? vendors.find((entry) => entry.id === demoVendor.id) : vendors.find((entry) => {
     if (entry.status !== 'ACTIVE' || !pinIsValid(pin, 4)) return false
     if (entry.pinHash && verifyPin(pin, entry.pinHash)) return true
-    if (entry.pin === pin) { entry.pinHash = hashPin(pin); repairedLegacyPin = true; return true }
+    if (typeof entry.pin === 'string' && entry.pin.trim() === pin) { entry.pin = pin; entry.pinHash = hashPin(pin); repairedLegacyPin = true; return true }
     return false
   })
   if (!vendor) return Response.json({ error: 'Invalid credentials' }, { status: 401 })
