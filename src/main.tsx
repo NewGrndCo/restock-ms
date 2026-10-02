@@ -7,7 +7,7 @@ type Role = 'VENDOR' | 'ADMIN'
 type Vendor = { id: string; vendorId: string; storeName: string; contactName: string; phone: string; address: string; city: string; state: string; zip: string; status: string; createdAt: string }
 type Order = { id: string; orderNumber: string; vendorId: string; status: string; items: Array<{ product: string; quantity: number }>; totalBottles: number; totalAmount: number; paymentMethod: 'CHECK' | 'CASH'; createdAt: string }
 const products = [{ name: 'Strawberry Lemonade', color: '#e31b18' }, { name: 'Classic Lemonade', color: '#ffc400' }, { name: 'Half & Half', color: '#f36b16' }]
-const api = async <T,>(path: string, init?: RequestInit) => { const response = await fetch(path, { ...init, headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error ?? 'Something went wrong'); return data as T }
+const api = async <T,>(path: string, init?: RequestInit) => { const response = await fetch(path, { ...init, signal: AbortSignal.timeout(8000), headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error ?? 'Something went wrong'); return data as T }
 function ProductBottle({ color }: { color: string }) { return <span className="bottle" style={{ '--bottle': color } as React.CSSProperties} aria-hidden="true" /> }
 
 function Gate({ onLogin }: { onLogin: (role: Role) => Promise<void> }) {
