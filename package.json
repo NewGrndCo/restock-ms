@@ -13,6 +13,8 @@
     "@netlify/blobs": "^11.1.3",
     "@netlify/functions": "^6.0.2",
     "@supabase/supabase-js": "^2.58.0",
+    "@types/leaflet": "^1.9.22",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
