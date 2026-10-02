@@ -3,7 +3,7 @@ import { getSession } from './_shared/security'
 import { audit, read, write, type Order, type Vendor } from './_shared/store'
 import { randomUUID } from 'node:crypto'
 
-const allowedProducts = new Set(['Strawberry Lemonade', 'Classic Lemonade', 'Half & Half'])
+const allowedProducts = new Set(['Strawberry Lemonade', 'Classic Lemonade', 'Half & Half', 'Alkaline Water', 'Blueberry Lemonade', 'Mango Lemonade', 'Raspberry Lemonade', 'Pineapple Lemonade'])
 
 export default async (req: Request, context: Context) => {
   const session = await getSession(context)
