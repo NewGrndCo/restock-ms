@@ -5,7 +5,10 @@ import { randomUUID } from 'node:crypto'
 
 export default async (req: Request, context: Context) => {
   const session = await getSession(context); if (!session || session.role !== 'ADMIN') return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  if (req.method === 'GET') return Response.json(await read<Vendor[]>('vendors', []).then((vendors) => vendors.map(({ pinHash: _pinHash, ...vendor }) => vendor)))
+  if (req.method === 'GET') {
+    const vendors = await read<Vendor[]>('vendors', [])
+    return Response.json({ vendors: vendors.map(({ pinHash: _pinHash, ...vendor }) => vendor) })
+  }
   if (req.method === 'PATCH') {
     const body = await req.json().catch(() => ({})) as { vendorId?: string; imageKey?: string }
     if (!body.vendorId || !body.imageKey) return Response.json({ error: 'Vendor and image are required' }, { status: 400 })
