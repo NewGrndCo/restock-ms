@@ -6,7 +6,7 @@ import './styles.css'
 import 'leaflet/dist/leaflet.css'
 
 type Role = 'VENDOR' | 'ADMIN'
-type Vendor = { id: string; vendorId: string; storeName: string; contactName: string; phone: string; address: string; city: string; state: string; zip: string; imageKey?: string; pin?: string; status: string; createdAt: string }
+type Vendor = { id: string; vendorId: string; storeName: string; contactName: string; phone: string; address: string; city: string; state: string; zip: string; imageKey?: string; pin?: string; pinConfigured?: boolean; status: string; createdAt: string }
 type Order = { id: string; orderNumber: string; vendorId: string; status: string; items: Array<{ product: string; quantity: number }>; totalBottles: number; totalAmount: number; paymentMethod: 'CHECK' | 'CASH'; createdAt: string }
 type Product = { name: string; color: string; inventory: number; imageKey?: string }
 type InventoryEntry = { id: string; productName: string; previousQuantity: number; quantity: number; delta: number; reason: string; actorType: string; createdAt: string }
