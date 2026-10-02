@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto'
 
 const publicVendor = (vendor: Vendor) => {
   const { pinHash: _pinHash, ...safe } = vendor
-  return { ...safe, pinConfigured: Boolean(vendor.pinHash) }
+  return { ...safe, pin: vendor.pin ?? (vendor.pinHash ? 'PIN active' : undefined), pinConfigured: Boolean(vendor.pinHash) }
 }
 
 export default async (req: Request, context: Context) => {
