@@ -16,6 +16,11 @@ export default async (req: Request, context: Context) => {
     if (!vendor) return Response.json({ error: 'Vendor not found' }, { status: 404 })
     const editable = ['storeName', 'contactName', 'phone', 'address', 'city', 'state', 'zip', 'imageKey'] as const
     for (const field of editable) if (typeof body[field] === 'string' && body[field].trim()) vendor[field] = body[field].trim() as never
+    if (typeof body.pin === 'string' && body.pin.trim()) {
+      if (!pinIsValid(body.pin.trim(), 4)) return Response.json({ error: 'Vendor PIN must be exactly four digits' }, { status: 400 })
+      vendor.pin = body.pin.trim()
+      vendor.pinHash = hashPin(body.pin.trim())
+    }
     if (body.status && ['ACTIVE', 'SUSPENDED', 'CLOSED'].includes(body.status)) vendor.status = body.status
     if (!vendor.storeName || !vendor.contactName || !vendor.phone || !vendor.address || !vendor.city || !vendor.state || !vendor.zip) return Response.json({ error: 'All vendor details are required' }, { status: 400 })
     await write('vendors', vendors); await audit({ actorType: 'ADMIN', vendorId: vendor.id, eventType: 'UPDATE_VENDOR', metadata: { status: vendor.status } }); const { pinHash: _pinHash, ...safeVendor } = vendor; return Response.json({ vendor: safeVendor })
