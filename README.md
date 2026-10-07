@@ -1,6 +1,10 @@
 # Monsta Squeeze Retail Restock
 
-Private, mobile-first retailer operations portal for Monsta Squeeze.
+Private, mobile-first retailer operations portal for Monsta Squeeze. Manage retailer orders, inventory, deliveries, and vendor workflows from one focused operations workspace.
+
+## Repository description
+
+Private Monsta Squeeze operations portal for retailer orders, inventory, deliveries, and vendor workflows.
 
 ## Deployment contract
 
