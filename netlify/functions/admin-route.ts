@@ -5,6 +5,7 @@ import { read, write, type Order, type Vendor } from './_shared/store'
 type Coordinate = { latitude: number; longitude: number; displayName: string }
 type RouteStop = { vendorId: string; storeName: string; address: string; latitude: number; longitude: number; orderIds: string[]; bottles: number; status: string; milesFromPrevious: number; minutesFromPrevious: number }
 type RouteResponse = { provider: string; origin: { address: string; latitude: number; longitude: number } | null; stops: RouteStop[]; geometry: [number, number][]; totalMiles: number; totalMinutes: number; warnings: string[]; generatedAt: string }
+type OsrmResponse = { trips?: Array<{ distance: number; duration: number; geometry?: { coordinates: [number, number][] }; legs?: Array<{ distance: number; duration: number }> }>; waypoints?: Array<{ waypoint_index: number; input_index: number }> }
 
 const originAddress = '1509 Brentwood Rd, Brentwood, NY'
 const routeStatuses = new Set(['READY', 'OUT_FOR_DELIVERY'])
@@ -56,11 +57,17 @@ export default async (req: Request, context: Context) => {
 
   const coordinates = [origin, ...located.map((entry) => entry.coordinate)]
   const coordinateString = coordinates.map((coordinate) => `${coordinate.longitude},${coordinate.latitude}`).join(';')
-  const routeResponse = await fetch(`https://router.project-osrm.org/trip/v1/driving/${coordinateString}?source=first&destination=last&roundtrip=false&overview=full&geometries=geojson&steps=false`)
-  if (!routeResponse.ok) return Response.json({ error: `Routing provider returned ${routeResponse.status}`, warnings }, { status: 502 })
-  const routed = await routeResponse.json() as { trips?: Array<{ distance: number; duration: number; geometry?: { coordinates: [number, number][] }; legs?: Array<{ distance: number; duration: number }> }>; waypoints?: Array<{ waypoint_index: number; input_index: number }> }
-  const trip = routed.trips?.[0]
-  if (!trip || !routed.waypoints) return Response.json({ error: 'Routing provider returned no usable route.', warnings }, { status: 502 })
+  let routed: OsrmResponse | null = null
+  try {
+    const routeResponse = await fetch(`https://router.project-osrm.org/trip/v1/driving/${coordinateString}?source=first&destination=last&roundtrip=false&overview=full&geometries=geojson&steps=false`, { signal: AbortSignal.timeout(7000) })
+    if (routeResponse.ok) routed = await routeResponse.json() as OsrmResponse
+    else warnings.push(`Road routing is temporarily unavailable (${routeResponse.status}); showing a straight-line planning route.`)
+  } catch { warnings.push('Road routing is temporarily unavailable; showing a straight-line planning route.') }
+  const trip = routed?.trips?.[0]
+  if (!trip || !routed?.waypoints) {
+    const fallbackStops: RouteStop[] = located.map((entry, index) => ({ vendorId: entry.vendor.id, storeName: entry.vendor.storeName, address: `${entry.vendor.address}, ${entry.vendor.city}, ${entry.vendor.state} ${entry.vendor.zip}`, latitude: entry.coordinate.latitude, longitude: entry.coordinate.longitude, orderIds: entry.orders.map((order) => order.id), bottles: entry.orders.reduce((sum, order) => sum + Number(order.totalBottles || 0), 0), status: entry.orders.some((order) => order.status === 'OUT_FOR_DELIVERY') ? 'OUT_FOR_DELIVERY' : 'READY', milesFromPrevious: index === 0 ? 0 : Number((Math.hypot(entry.coordinate.latitude - located[index - 1].coordinate.latitude, entry.coordinate.longitude - located[index - 1].coordinate.longitude) * 69).toFixed(1)), minutesFromPrevious: 0 }))
+    return Response.json({ provider: 'Address coordinates', origin: { address: originAddress, latitude: origin.latitude, longitude: origin.longitude }, stops: fallbackStops, geometry: coordinates.map((coordinate) => [coordinate.longitude, coordinate.latitude] as [number, number]), totalMiles: 0, totalMinutes: 0, warnings, generatedAt: new Date().toISOString() } satisfies RouteResponse)
+  }
   const orderedWaypoints = routed.waypoints.map((waypoint, inputIndex) => ({ ...waypoint, inputIndex })).sort((a, b) => a.waypoint_index - b.waypoint_index)
   const orderedLocated = orderedWaypoints.filter((waypoint) => waypoint.inputIndex > 0).map((waypoint) => located[waypoint.inputIndex - 1])
   const stops: RouteStop[] = orderedLocated.map((entry, index) => {
@@ -73,3 +80,4 @@ export default async (req: Request, context: Context) => {
 }
 
 export const config: Config = { path: '/api/admin/route' }
+
