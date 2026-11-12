@@ -92,3 +92,5 @@ export async function readMedia(key: string) { const client = getSupabase(); if 
 
 
 // Runtime uses Netlify Blobs when the optional Supabase backend is unavailable.
+
+// Keep deployment history explicit when runtime credentials change.
