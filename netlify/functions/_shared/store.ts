@@ -90,3 +90,5 @@ export async function removeDriverLocation(sessionId: string) {
 export async function writeMedia(key: string, data: ArrayBuffer, contentType: string) { const client = getSupabase(); if (client) { const { error } = await client.storage.from('restock-media').upload(key, data, { contentType, upsert: true }); if (error) throw error; return }; await mediaStore.set(key, data, { metadata: { contentType, uploadedAt: new Date().toISOString() } }) }
 export async function readMedia(key: string) { const client = getSupabase(); if (client) { const { data, error } = await client.storage.from('restock-media').download(key); if (!error && data) return { data: await data.arrayBuffer(), metadata: { contentType: data.type } }; return mediaStore.getWithMetadata(key) }; return mediaStore.getWithMetadata(key) }
 
+
+// Runtime uses Netlify Blobs when the optional Supabase backend is unavailable.
